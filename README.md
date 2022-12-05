@@ -42,7 +42,7 @@ python Schedule.py input1.txt
 - input2.txt: invalid schedule, intersect operation
 - input3.txt: invalid schedule, Ti<Tj and Tj complete write after Ti start validation phase
 
-# Optimistic Concurrency Control
+# Multiversion Timestamp Ordering Concurrency Control
 
 ## How to Run
 ```
