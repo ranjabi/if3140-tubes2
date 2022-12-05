@@ -30,9 +30,11 @@ class Process:
 
     def __str__(self) -> str:
         if (self.process == 'C'):
-            return f'{self.process}{self.transID}'
+            return f'T{self.transID} commit'
+        elif(self.process == 'R'):
+            return f'T{self.transID} read {self.dataID}'
         else:
-            return f'{self.process}{self.transID}{self.dataID}'
+            return f'T{self.transID} write {self.dataID}'
 
 
 class MVCC:
@@ -43,7 +45,9 @@ class MVCC:
 
     def exec(self, schedule):
         if (schedule.process == 'C'):
-            print(f'{schedule}: Commit {schedule.transID}')
+            print(f'{schedule}: Commit success')
+            print("--------------------------------------------------")
+            self.schedule.remove(schedule)
             return True
         elif (schedule.process == 'R'):
             return self.read(schedule)
@@ -53,14 +57,17 @@ class MVCC:
     def read(self, schedule):
         listVersion = self.data.version[schedule.dataID]
         for idx, t in enumerate(self.transaction):
-            if (t.ts == schedule.transID):
+            if (t.id == schedule.transID):
                 transaction = t
         for version in listVersion[::-1]:
             if (version.WTS <= transaction.ts):
                 if (version.RTS < transaction.ts):
+                    print(f'Updating R-TS of {version.name + str(version.version)} from {version.RTS} to {transaction.ts}')
                     version.RTS = transaction.ts
                 print(f'{schedule}: Read {version}')
+                print("--------------------------------------------------")
                 break
+        self.schedule.remove(schedule)
         return True
     
     def write(self, schedule):
@@ -74,34 +81,39 @@ class MVCC:
                     return False
                 elif (version.WTS == transaction.ts):
                     print(f'{schedule}: Overwrite {version}')
+                    print("--------------------------------------------------")
+                    self.schedule.remove(schedule)
                     return True
                 else:
-                    newVersion = Data(schedule.dataID, version.version + 1, transaction.ts, transaction.ts)
+                    newVersion = Data(schedule.dataID, len(listVersion), transaction.ts, transaction.ts)
+                    print(f'Creating new version {newVersion}')
                     print(f'{schedule}: Write {newVersion}')
+                    print("--------------------------------------------------")
                     listVersion.append(newVersion)
+                    listVersion.sort(key=lambda x: x.WTS)
+                    self.schedule.remove(schedule)
                     return True
         return False
 
     
     def start(self):
-        print("Starting MVCC")
-        aborted = []
-        for i in range(len(self.schedule)):
-            if (self.schedule[i].transID not in aborted and self.exec(self.schedule[i]) == False):
-                print(f'{self.schedule[i]}: Abort {self.schedule[i].transID}')
-                aborted.append(self.schedule[i].transID)
-        
-        while (aborted):
-            processAborted = []
-            for i in range(len(aborted)):
+        maxTS = 0
+        for t in self.transaction:
+            maxTS = max(maxTS, t.ts)
+        print("Starting MVCC...")
+        print("--------------------------------------------------")
+        while (len(self.schedule) > 0):
+            scheduleNow = self.schedule[0]
+            if (self.exec(scheduleNow) == False):
+                print(f'{scheduleNow}: Write failed. Aborting T{scheduleNow.transID}')
+                print(f'Trying to start T{scheduleNow.transID} again with new timestamp {maxTS + 1}')
+                print("--------------------------------------------------")
                 for idx, t in enumerate(self.transaction):
-                    if (t.id == aborted[i]):
-                        t.ts = len(self.transaction) + 1 + i
-                        processAborted = processAborted + t.process
+                    if (t.id == scheduleNow.transID):
+                        t.ts = maxTS + 1
+                        maxTS += 1
+                        processNow = t.process.index(scheduleNow)
+                        t.process = t.process[:processNow]
+                        self.schedule = t.process + self.schedule
                         break
-            aborted = []
-            for i in range(len(processAborted)):
-                if (processAborted[i].transID not in aborted and self.exec(processAborted[i]) == False):
-                    print(f'{processAborted[i]}: Abort {processAborted[i].transID}')
-                    aborted.append(processAborted[i].transID)
         print("MVCC Finished")
