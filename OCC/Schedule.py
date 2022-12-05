@@ -1,37 +1,10 @@
 import sys
-
-# TO DO: AUTOMATE INPUT FROM CMD FOR TEST FILE
-class Transaction:
-  def __init__(self, trNum, operation):
-    self.trNum = trNum
-    self.operation = operation
-    self.ts = [-1,-1,-1]
-
-  def getStartTS(self):
-    return self.ts[0]
-
-  def setStartTS(self, ts):
-    self.ts[0] = ts
-
-  def getValidationTS(self):
-    return self.ts[1]
-
-  def setValidationTS(self, ts):
-    self.ts[1] = ts
-
-  def getFinishTS(self):
-    return self.ts[2]
-
-  def setFinishTS(self, ts):
-    self.ts[2] = ts
-
-  def getTrNum(self):
-    return self.trNum
-
-  def getOperation(self):
-    return self.operation
+from FileReader import readFile
 
 class Schedule:
+  # store the transactions of a schedule
+  # interface to run OCC protocol
+
   def __init__(self):
     self.rawTr = []
     self.tr = []
@@ -41,6 +14,7 @@ class Schedule:
     self.rawTr = tr
 
   def readPhase(self, tr):
+    # start read phase
     type = 0
     for operation in tr.getOperation():
       if operation[type] == "R":
@@ -50,14 +24,14 @@ class Schedule:
     tr.setStartTS(self.rawTr.index(tr.operation[0]))
 
   def firstConditionCheck(self, trCompare, tr):
-    # return true if pass first condition, finishTS(Ti) < startTS(Tj)
+    # return true if pass first condition, finishTS(Ti) < startTS(Tj) where Ti<Tj
     status = True
     if (trCompare.getTrNum() < tr.getTrNum() and not(trCompare.getFinishTS() < tr.getStartTS())):
       status = False
     return status
 
   def checkIntersect(self, trCompare, tr):
-    # return true if tr read item written by trCompare
+    # return true if tr read item written by trCompare where TS(trCompare) < TS(tr)
     status = True
     for operation in tr.getOperation():
       if operation[0] == "R":
@@ -73,7 +47,7 @@ class Schedule:
     return status
 
   def secondConditionCheck(self, trCompare, tr):
-    # return true if pass second condition
+    # return true if pass second condition checking
     status = True
     if (trCompare.getTrNum() < tr.getTrNum() and not(tr.getStartTS() < trCompare.getFinishTS() and trCompare.getFinishTS() < tr.getValidationTS())):
       print("Validation phase start after write phase in previous transaction.")
@@ -84,6 +58,7 @@ class Schedule:
     return status
 
   def validationPhase(self, tr):
+    # start validation phase
     tr.setValidationTS(self.executedOperation.index(tr.operation[-2]))
     validationTest = False
     while not(validationTest):
@@ -105,37 +80,25 @@ class Schedule:
           self.executedOperation.append(operation)
       tr.setFinishTS(self.executedOperation.index(tr.operation[-1]))
 
-def main():
-  s = Schedule()
-  with open('input2.txt','r') as f:
-    sentences = list(f)
-    temp1 = []
-    temp2 = []
-    temp3 = []
-    allTr = []
-    for item in sentences:
-      if int(item[1]) == 1:
-        temp1.append(item[:-1])
-      elif int(item[1]) == 2:
-        temp2.append(item[:-1])
-      elif int(item[1]) == 3:
-        temp3.append(item[:-1])
-
-      allTr.append(item[:-1])
-
-    tr1 = Transaction(1, temp1)
-    tr2 = Transaction(2, temp2)
-    tr3 = Transaction(3, temp3)
-
-    s.tr.append(tr1)
-    s.tr.append(tr2)
-    s.tr.append(tr3)
-    s.setRawTr(allTr)
-
-  for tr in s.tr:
-    print("Transaction",tr.getTrNum(),":")
-    s.readPhase(tr)
-    s.validationPhase(tr)
+  def runOCC(self):
+    # start OCC protocol
+    for tr in self.tr:
+      print("Transaction",tr.getTrNum(),":")
+      self.readPhase(tr)
+      self.validationPhase(tr)
 
 if __name__ == "__main__":
-  main()
+  print("args", sys.argv)
+
+  if (len(sys.argv) != 2):
+    print("Please enter the correct format. Example:\npython Schedule.py <filename.txt>")
+  else:
+    schedule = Schedule()
+
+    try:
+      readFile(sys.argv[1],schedule)
+    except FileNotFoundError as e:
+      print(e.filename,"\nis not found. Please enter the correct filename.")
+      sys.exit()
+
+    schedule.runOCC()
