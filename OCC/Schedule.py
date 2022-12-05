@@ -88,8 +88,6 @@ class Schedule:
       self.validationPhase(tr)
 
 if __name__ == "__main__":
-  print("args", sys.argv)
-
   if (len(sys.argv) != 2):
     print("Please enter the correct format. Example:\npython Schedule.py <filename.txt>")
   else:
