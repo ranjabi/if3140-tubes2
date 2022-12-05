@@ -9,6 +9,7 @@ class Transaction:
         self.name = name
         self.item_locked = []
         self.queue = []
+        self.done = [] # deadlock prevention
 
     # remove all item locks
     def release_lock(self):
@@ -19,11 +20,11 @@ class Transaction:
         self.item_locked.append(item)
     
     # remove first instruction
-    def do_instruction(self):
+    def do_queue(self):
         self.queue.pop(0)
     
     # add instruction to queue
-    def add_instruction(self, instruction):
+    def add_queue(self, instruction):
         self.queue.append(instruction)
 
     # return the first element of queue
@@ -37,6 +38,14 @@ class Transaction:
     # clear queue
     def empty_queue(self):
         self.queue.clear()
+    
+    # add instruction to done
+    def add_done(self, instruction):
+        self.done.append(instruction)
+    
+    # clear done
+    def empty_done(self):
+        self.done.clear()
     
     # destructor
     # garbage collector
