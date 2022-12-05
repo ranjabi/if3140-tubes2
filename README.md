@@ -1,6 +1,6 @@
 # if3140-tubes2
 
-# Optimistic Concurrency Control / Validation Base Protocol
+# Optimistic Concurrency Control
 
 ## How to Run
 ```
