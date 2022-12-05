@@ -1,0 +1,1 @@
+R1(A) R2(B) W1(A) R1(B) W3(A) C3 W4(B) C4 W2(B) C2 R1(C) C1

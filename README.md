@@ -1,5 +1,32 @@
 # if3140-tubes2
 
+# Simple Locking
+
+## How to Run
+```
+cd SimpleLocking/src
+```
+```
+python SimpleLocking.py
+```
+Ikuti panduan pada CLI.
+
+## Format Input Schedule
+```
+R1(X) W2(X) W2(Y) W3(Y) W1(X) C1 C2 C3
+```
+- R merupakan kode operasi read, W kode operasi write, dan C kode operasi commit.
+- Angka merupakan kode transaksi dan huruf dalam kurung merupakan kode item.
+- Kode transaksi dan kode item dapat berupa angka atau huruf, tetapi tidak keduanya.
+    - ✅ R1(X); R1(1); RX(1); RX(X)
+    - ❌ R1X(X); R1(1X)
+- Rekomendasi: R\<angka>(\<huruf>).
+
+## Test Case
+Test case tersimpan pada file .txt dalam direktori test.
+- test1.txt: schedule tanpa deadlock
+- test2.txt: schedule dengan deadlock
+
 # Optimistic Concurrency Control
 
 ## How to Run
